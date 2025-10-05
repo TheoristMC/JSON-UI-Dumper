@@ -20,10 +20,8 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Build App (inject env)
+      - name: Build App
         run: npm run build
-        env:
-          VITE_GITHUB_TOKEN: ${{ secrets.VITE_GITHUB_TOKEN }}
 
       - run: ls -la dist # check if dist folder exists
 

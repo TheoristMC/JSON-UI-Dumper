@@ -5,15 +5,15 @@ import EcosystemIcon from './icons/IconEcosystem.vue'
 
 import { ref, onMounted } from 'vue';
 
-import { getLatestVersion, getFilesInDirectory } from '@/helper/getUIFiles';
+import { getAllUIFiles, getMetadata } from '@/helper/getUIFiles';
 
 const latestVersion = ref("Loading...");
 const availableFiles = ref("Loading...");
 
 onMounted(async () => {
-  latestVersion.value = (await getLatestVersion("Mojang", "bedrock-samples")).replace("v", "");
+  latestVersion.value = (await getMetadata()).version;
 
-  const availableUIFiles = (await getFilesInDirectory("Mojang", "bedrock-samples", "resource_pack/ui")).map((file) => file.name);
+  const availableUIFiles = (await getAllUIFiles()).map((file) => file.name);
 
   availableFiles.value = availableUIFiles.join(", ");
 });
