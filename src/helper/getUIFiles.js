@@ -12,17 +12,17 @@ const OctoInit = new Octokit({
 
 /**
  * Get the repository's metadata
- * @param {string} owner 
- * @param {string} repo 
+ * @param {string} owner
+ * @param {string} repo
  * @returns {Promise<GetRepoResponse>}
  */
 async function getMetadata(owner, repo) {
-  return await OctoInit.request("GET /repos/{owner}/{repo}", { owner, repo })
+  return await OctoInit.request("GET /repos/{owner}/{repo}", { owner, repo });
 }
 
 /**
  * Gets the latest update version
- * @param {string} owner 
+ * @param {string} owner
  * @param {string} repo
  * @returns {Promise<string>}
  */
@@ -37,14 +37,53 @@ async function getLatestVersion(owner, repo) {
     owner,
     repo,
     sha: branch,
-    per_page: 1
+    per_page: 1,
   });
 
   return commits.data[0].commit.message;
 }
 
 /**
- * Get all files inside a directory of a repo
+ * Delay helper
+ * @param {number} ms milliseconds
+ */
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Fetch a file from GitHub with automatic retry on 429
+ * @param {string} owner
+ * @param {string} repo
+ * @param {string} path
+ * @param {number} retries number of retries left
+ */
+async function fetchFileWithRetry(owner, repo, path, retries = 5) {
+  try {
+    /**
+     * @type {GetRepoContentResponse}
+     */
+    const response = await OctoInit.request(
+      "GET /repos/{owner}/{repo}/contents/{path}",
+      { owner, repo, path }
+    );
+    return response.data;
+  } catch (err) {
+    if (err.status === 429 && retries > 0) {
+      const waitTime = 2 ** (5 - retries) * 1000; // exponential backoff: 1s, 2s, 4s... to avoid rate limiting
+
+      console.warn(`Rate limit hit. Retrying in ${waitTime / 1000}s...`); // [REMOVE] this after new commit
+
+      await delay(waitTime);
+      return fetchFileWithRetry(owner, repo, path, retries - 1);
+    }
+
+    throw err;
+  }
+}
+
+/**
+ * Get all JSON files inside a directory of a repo
  * @param {string} owner
  * @param {string} repo
  * @param {string} path
@@ -52,40 +91,25 @@ async function getLatestVersion(owner, repo) {
  */
 async function getFilesInDirectory(owner, repo, path) {
   try {
-    /** @type {GetRepoContentResponse} */
-    const response = await OctoInit.request(
-      "GET /repos/{owner}/{repo}/contents/{path}",
-      { owner, repo, path }
-    );
+    const response = await fetchFileWithRetry(owner, repo, path);
+    const files = Array.isArray(response) ? response : [response];
 
-    const files = Array.isArray(response.data)
-      ? response.data
-      : [response.data];
-
-    // Filter only UI JSON files
+    // Filter only JSON files
     const uiFiles = files.filter(
       (file) =>
         file.type === "file" && file.name.toLowerCase().endsWith(".json")
     );
 
-    // Return the mapped UI files
-    return await Promise.all(
+    // Fetch each file content with retry
+    const results = await Promise.all(
       uiFiles.map(async (file) => {
-        /** @type {GetRepoContentResponse} */
-        const fileResp = await OctoInit.request(
-          "GET /repos/{owner}/{repo}/contents/{path}",
-          { owner, repo, path: file.path }
-        );
-
-        // Decode from base64
-        const contents = atob(fileResp.data.content);
-
-        return {
-          name: file.name,
-          file_contents: contents,
-        };
+        const fileData = await fetchFileWithRetry(owner, repo, file.path);
+        const contents = atob(fileData.content); // decode base64
+        return { name: file.name, file_contents: contents };
       })
     );
+
+    return results;
   } catch (error) {
     console.error("Error fetching files:", error);
     return [];
