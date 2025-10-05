@@ -14,5 +14,5 @@ console.log("Token exist:", !!import.meta.env.VITE_GITHUB_TOKEN);
   });
 
   const rate = await OctoInit.request("GET /rate_limit");
-  console.log("Rate limit:", rate.data.rate);
+  console.log("Rate Limit:", rate.data.rate);
 })();
