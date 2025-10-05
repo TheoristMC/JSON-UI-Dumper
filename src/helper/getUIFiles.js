@@ -97,14 +97,17 @@ async function getFilesInDirectory(owner, repo, path) {
     // Filter only JSON files
     const uiFiles = files.filter(
       (file) =>
-        file.type === "file" && file.name.toLowerCase().endsWith(".json")
+        file.type === "file" &&
+        file.name.toLowerCase().endsWith(".json") &&
+        file.download_url // must exist
     );
 
-    // Fetch each file content with retry
+    // Use download_url (saves an API call per file!)
     const results = await Promise.all(
       uiFiles.map(async (file) => {
-        const fileData = await fetchFileWithRetry(owner, repo, file.path);
-        const contents = atob(fileData.content); // decode base64
+        const contents = await fetch(file.download_url).then((res) =>
+          res.text()
+        );
         return { name: file.name, file_contents: contents };
       })
     );
