@@ -6,7 +6,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: "/repo-name/",
+  base: "/JSON-UI-Dumper/",
   plugins: [
     vue(),
     vueDevTools(),
