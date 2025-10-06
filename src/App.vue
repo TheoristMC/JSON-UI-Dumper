@@ -1,47 +1,34 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
+import Header from './components/ui/Header.vue';
+import Footer from './components/ui/Footer.vue';
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="JSON-UI-Dumper" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  <div class="vert-container">
+    <Header title="JSON-UI Dumper"></Header>
+    <main>
+      
+    </main>
+    <Footer footer="Credits to @MinecraftBedrockArabic"></Footer>
+  </div>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
+.vert-container {
+  display: flex;
+  flex-direction: column;
+
+  height: 100dvh;
+  width: 100%;
+
+  overflow: hidden;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
+main {
+  flex: 1;
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
 }
 </style>
