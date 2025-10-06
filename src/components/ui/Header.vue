@@ -1,16 +1,33 @@
 <template>
   <header>
-    <h1>{{ title }}</h1>
+    <h1>{{ titleWithVersion }}</h1>
   </header>
 </template>
 
 <script setup>
-defineProps({
+import { computed, onMounted, ref } from 'vue';
+import { getMetadata } from '@/js/getUIFiles';
+
+const gameVersion = ref("Loading...");
+
+onMounted(async() => {
+  try {
+    const metadata = await getMetadata();
+    gameVersion.value = metadata.version;
+  } catch (err) {
+    console.error("Failed to load metadata:", err);
+    gameVersion.value = "???";
+  }
+});
+
+const props = defineProps({
   title: {
     type: String,
     default: "Placeholder"
   }
-})
+});
+
+const titleWithVersion = computed(() => `${props.title} (${gameVersion.value})`)
 </script>
 
 <style scoped>

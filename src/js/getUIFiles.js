@@ -65,7 +65,7 @@ async function fetchUIFile(path, retries = 5) {
 /**
  * Gets all UI files from bedrock-samples
  * @param {string} path
- * @returns {Promise<{ file_name: string, file_contents: string | undefined}>}
+ * @returns {Promise<{ file_name: string, contents: string | undefined}[]>}
  */
 async function getAllUIFiles(path = "resource_pack/ui") {
   const response = await fetchUIFile(path);
