@@ -1,16 +1,30 @@
 /**
  * @typedef {{ type: string, name: string, download_url: string }[]} UIFile
  * @typedef {{ commit: { message: string, author: { name: string, date: string } } }[]} MetaData
+ * @typedef {Promise<{ limit: number, used: number, remaining: number, reset: number }>} FetchRate
  */
+
+/**
+ * Get the git fetch rate
+ * @returns {FetchRate}
+ */
+async function getFetchRate() {
+  // Fetch via cloudfare worker
+  const response = await fetch(`https://git-proxy.json-ui-dumper.workers.dev/rate_limit`);
+  if (!response.ok) {
+    throw new Error("Fetch rate limit failed:", response.status);
+  }
+
+  return (await response.json()).rate;
+}
 
 /**
  * Get the metadata of the latest commit on samples
  * @returns {Promise<{ version: string, authorName: string, date: string }>}
  */
-async function getMetadata() {
-  const response = await fetch(
-    `https://api.github.com/repos/Mojang/bedrock-samples/commits`
-  );
+async function getMetadata(path = "commits") {
+  // Fetch via cloudfare worker
+  const response = await fetch(`https://git-proxy.json-ui-dumper.workers.dev/?path=${path}`);
 
   if (!response.ok) {
     throw new Error(`Git Metadata Fetch error: ${response.status}`);
@@ -30,45 +44,13 @@ async function getMetadata() {
 }
 
 /**
- * Delay helper
- * @param {number} ms milliseconds
- */
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Fetch a UI file from the samples with automatic retry on 429
- * @param {string} path
- * @param {number} retries number of retries left
- */
-async function fetchUIFile(path, retries = 5) {
-  try {
-    const response = await fetch(
-      `https://api.github.com/repos/Mojang/bedrock-samples/contents/${path}`
-    );
-    return response;
-  } catch (err) {
-    if (err.status === 429 && retries > 0) {
-      const waitTime = 2 ** (5 - retries) * 1000; // exponential backoff: 1s, 2s, 4s... to avoid rate limiting
-
-      console.warn(`Rate limit hit. Retrying in ${waitTime / 1000}s...`);
-
-      await delay(waitTime);
-      return fetchUIFile(path, retries - 1);
-    }
-
-    throw err;
-  }
-}
-
-/**
  * Gets all UI files from bedrock-samples
  * @param {string} path
  * @returns {Promise<{ file_name: string, contents: string | undefined}[]>}
  */
-async function getAllUIFiles(path = "resource_pack/ui") {
-  const response = await fetchUIFile(path);
+async function getAllUIFiles(path = "contents/resource_pack/ui") {
+  // Fetch via cloudfare worker
+  const response = await fetch(`https://git-proxy.json-ui-dumper.workers.dev/?path=${path}`);
 
   if (!response.ok) {
     throw new Error(`Git File Fetch error: ${response.status}`);
@@ -97,4 +79,4 @@ async function getAllUIFiles(path = "resource_pack/ui") {
   );
 }
 
-export { getAllUIFiles, getMetadata };
+export { getAllUIFiles, getMetadata, getFetchRate };
