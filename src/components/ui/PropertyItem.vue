@@ -39,6 +39,8 @@ const props = defineProps({
   font-size: 1.5rem;
   color: #f0f0f0;
 
+  word-break: break-word;
+
   margin: 4px 0;
 }
 

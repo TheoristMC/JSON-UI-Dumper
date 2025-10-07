@@ -7,6 +7,6 @@ import { getFetchRate } from "./js/getUIFiles";
 createApp(App).mount("#app");
 
 (async () => {
-  const { used: rateUsed, remaining: rateRemaining } = await getFetchRate();
-  console.log(`Fetch Rate (${rateUsed}/${rateRemaining})`);
+  const { remaining: rateRemaining } = await getFetchRate();
+  console.log(`Remaining fetch rate:`, rateRemaining);
 })();
