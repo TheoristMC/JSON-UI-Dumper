@@ -46,7 +46,7 @@ async function getMetadata(path = "commits") {
 /**
  * Gets all UI files from bedrock-samples
  * @param {string} path
- * @returns {Promise<{ file_name: string, contents: string | undefined}[]>}
+ * @returns {Promise<{ name: string, contents: string | undefined}[]>}
  */
 async function getAllUIFiles(path = "contents/resource_pack/ui") {
   // Fetch via cloudfare worker

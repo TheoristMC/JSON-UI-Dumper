@@ -1,16 +1,32 @@
 <template>
   <footer>
-    <p>{{ footer }}</p>
+    <p>{{ footerWithVersion }}</p>
   </footer>
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   footer: {
-    type: String,
-    default: "Placeholder"
+    type: String
   }
-})
+});
+
+import { computed, onMounted, ref } from 'vue';
+import { getMetadata } from '@/js/getUIFiles';
+
+const gameVersion = ref("(Loading...)");
+
+onMounted(async() => {
+  try {
+    const metadata = await getMetadata();
+    gameVersion.value = metadata.version;
+  } catch (err) {
+    console.error("Failed to load metadata:", err);
+    gameVersion.value = "???";
+  }
+});
+
+const footerWithVersion = computed(() => `${props.footer ? `${props.footer}\n` : ""}Bedrock Stable v${gameVersion.value}`)
 </script>
 
 <style scope>
@@ -25,6 +41,7 @@ footer>p {
   font-family: "MinecraftSeven";
   color: #f0f0f0;
   word-break: break-word;
+  white-space: pre-wrap;
   margin: 0;
 }
 </style>

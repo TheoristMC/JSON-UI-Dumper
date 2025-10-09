@@ -6,6 +6,11 @@ The website is still on it's early stages and anything seen is not final!
 
 Dumps all available elements seen on the vanilla UI, generated based on the latest bedrock samples.
 
+## Goals
+
+- Better code format, supporting multiple colors and etc..
+- Dumps all properties with accuracies
+
 ## Credits
 
 [@MinecraftBedrockArabic](https://github.com/MinecraftBedrockArabic)
