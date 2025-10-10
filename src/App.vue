@@ -1,5 +1,6 @@
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { useVirtualList } from "@vueuse/core";
 
 import { getAllUIFiles } from "./js/getUIFiles";
 import { collectProperties } from "./js/getProperties";
@@ -19,33 +20,66 @@ const filteredProperties = computed(() => {
 
 onMounted(async () => {
   try {
-    const filesJoined = (await getAllUIFiles());
-    const mappedFiles = filesJoined.map((file) => {
-      return { name: file.name, contents: JSON5.parse(file.contents) };
-    });
+    const filesJoined = await getAllUIFiles();
+    const mappedFiles = filesJoined.map(file => ({
+      name: file.name,
+      contents: JSON5.parse(file.contents),
+    }));
 
     const collectedProperties = collectProperties(mappedFiles);
+    const propertyEntries = Object.entries(collectedProperties);
 
-    Object.entries(collectedProperties).forEach(([ k, v ]) => {
-      properties.value.push({
-        title: `${k}`,
-        code: v,
-      });
-    });
+    // Don't sort the two pinned items
+    const pinnedItems = propertyEntries.slice(0, 2);
+
+    // Sort the rest alphabetically
+    const items = propertyEntries.slice(2).sort(([keyA], [keyB]) =>
+      keyA.localeCompare(keyB)
+    );
+
+    // Combine them back together
+    properties.value = [...pinnedItems, ...items].map(([k, v]) => ({
+      title: k,
+      code: JSON.stringify(v, null, 2),
+    }));
+
   } catch (err) {
-    console.error("Error occured:", err);
+    console.error("Error occured during data load:\n", err);
   }
-})
+});
+
+const listContainer = ref(null);
+
+// Merge ref from virtual scrolling to list container
+const containerRef = (el) => {
+  containerProps.ref.value = el;
+  listContainer.value = el;
+};
+
+const { containerProps, wrapperProps, list } = useVirtualList(filteredProperties, {
+  itemHeight: 61,
+});
+
+watch(searchQuery, async() => {
+  await nextTick()
+  if (listContainer.value) listContainer.value.scrollTop = 0;
+});
 </script>
 
 <template>
   <div class="vert-container">
     <Header title="JSON-UI Dumper"></Header>
-    <input v-model="searchQuery" placeholder="Search..."></input>
-    <main>
-      <!-- Loop through the properties -->
-      <PropertyItem v-for="(item, index) in filteredProperties" :key="index" :property-title="item.title"
-        :property-code="item.code" />
+    <input v-model="searchQuery" placeholder="Search..." id="vue_search_bar" autocomplete="off"></input>
+    <main v-bind="containerProps" :ref="containerRef">
+      <div v-bind="wrapperProps">
+        <PropertyItem 
+          v-for="{ index, data } in list"
+          :key="index"
+          :property-title="data.title"
+          :property-code="data.code
+        ">
+        </PropertyItem>
+      </div>
     </main>
     <Footer footer="(Beta Phase)"></Footer>
   </div>
@@ -62,7 +96,7 @@ onMounted(async () => {
   overflow: hidden;
 }
 
-.vert-container > input {
+#vue_search_bar {
   font-family: "MinecraftSeven";
   color: #AAAAAA;
 
@@ -82,13 +116,14 @@ onMounted(async () => {
 
 main {
   flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
 
+main > div {
   display: flex;
   flex-direction: column;
-
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: none;
 }
 </style>
 
