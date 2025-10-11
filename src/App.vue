@@ -42,7 +42,6 @@ onMounted(async () => {
       title: k,
       code: JSON.stringify(v, null, 2),
     }));
-
   } catch (err) {
     console.error("Error occured during data load:\n", err);
   }
@@ -76,12 +75,12 @@ watch(searchQuery, async() => {
           v-for="{ index, data } in list"
           :key="index"
           :property-title="data.title"
-          :property-code="data.code
-        ">
+          :property-code="data.code"
+        >
         </PropertyItem>
       </div>
     </main>
-    <Footer footer="(Beta Phase)"></Footer>
+    <Footer footer=""></Footer>
   </div>
 </template>
 

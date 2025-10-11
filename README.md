@@ -9,7 +9,11 @@ Dumps all available elements seen on the vanilla UI, generated based on the late
 ## Goals
 
 - Better code format, supporting multiple colors and etc..
-- Dumps all properties with accuracies
+- Allow users to switch between latest stable/preview
+- ~~Dumps all properties with accuracies~~
+
+## Fix
+- Save checkbox states so even if the user scrolls, the checkbox is still expanded
 
 ## Credits
 

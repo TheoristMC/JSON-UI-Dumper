@@ -36,7 +36,7 @@ function isAVariable(v) {
 
 /**
  * Check if the key of the property should be blacklisted/ignored
- * @param {string} k 
+ * @param {string} k
  * @returns {boolean}
  */
 function isPropBlacklisted(k) {
@@ -97,7 +97,7 @@ function collectProperties(arrOfJSON) {
 
   /**
    * Dissects all properties inside an array property
-   * @param {string} k 
+   * @param {string} k
    * @param {any} v
    */
   function mergeArrays(k, v) {
@@ -146,19 +146,17 @@ function collectProperties(arrOfJSON) {
 
       if (elemIsAControl) return mergeControls(v);
 
-      if (properties.hasOwnProperty(k)) {
-        const existingProperty = properties[k];
-        if (!Array.isArray(existingProperty)) {
-          properties[k] = [v];
-          return;
-        }
+      if (!Object.prototype.hasOwnProperty.call(properties, k)) {
+        properties[k] = [v];
+        return;
+      }
 
-        // Check if the value already exists then return (ONLY PRIMITIVES)
-        if (existingProperty.includes(v)) return;
-
-        existingProperty.push(v);
+      const existing = properties[k];
+      if (Array.isArray(existing)) {
+        // Check if the value already exists (only primitives)
+        if (!existing.includes(v)) existing.push(v);
       } else {
-        properties[k] = v;
+        properties[k] = [v];
       }
     } catch (err) {
       console.error("Collecting properties led to an error: \n", err);

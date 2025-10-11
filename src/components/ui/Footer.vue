@@ -31,8 +31,9 @@ const footerWithVersion = computed(() => `${props.footer ? `${props.footer}\n` :
 
 <style scope>
 footer {
-  background-color: rgba(0, 0, 0, 0.5);
-  border-top: 4px solid #444;
+  background-color: rgba(0, 0, 0, 0.45);
+  border-top: 4px solid #2b2b2b;
+  margin-top: 3px;
   padding: 10px;
 }
 

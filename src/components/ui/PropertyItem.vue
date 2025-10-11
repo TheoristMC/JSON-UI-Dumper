@@ -40,6 +40,7 @@ const props = defineProps({
 
 .checkbox-content {
   margin-top: 3px;
+  margin-bottom: 3px;
   padding: 6px;
 
   max-height: 300px;
@@ -76,9 +77,10 @@ const props = defineProps({
   inset: 0;
   cursor: pointer;
   z-index: 2;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.checkbox-wrapper>.fake-checkbox {
+.fake-checkbox {
   padding: 12px;
   background-color: #313233;
 
@@ -95,7 +97,7 @@ const props = defineProps({
   box-shadow: 0 0 0 3px #1d1e1f;
 }
 
-.checkbox-wrapper>.fake-checkbox>h1 {
+.fake-checkbox>h1 {
   margin: 0;
 
   word-break: break-word;
