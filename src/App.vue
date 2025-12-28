@@ -68,7 +68,7 @@ watch(searchQuery, async() => {
 <template>
   <div class="vert-container">
     <Header title="JSON-UI Dumper"></Header>
-    <input v-model="searchQuery" placeholder="Search..." id="vue_search_bar" autocomplete="off"></input>
+    <input v-model="searchQuery" placeholder="Search properties..." id="vue_search_bar" autocomplete="off"></input>
     <main v-bind="containerProps" :ref="containerRef">
       <div v-bind="wrapperProps">
         <PropertyItem 
@@ -100,6 +100,7 @@ watch(searchQuery, async() => {
   color: #AAAAAA;
 
   outline: none;
+  caret-color: #6cc349;
 
   margin: 6px 6px;
   padding: 12px 15px;

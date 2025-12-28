@@ -1,8 +1,9 @@
 # JSON-UI Dumper
 
-The website is still on it's early stages and anything seen is not final!
+You can choose the version you want to see:
 
-[Click to see the website](https://theoristmc.github.io/JSON-UI-Dumper/)
+- [Preview](https://theoristmc.github.io/JSON-UI-Dumper/?version=preview)
+- [Stable](https://theoristmc.github.io/JSON-UI-Dumper/?version=stable)
 
 Dumps all available elements seen on the vanilla UI, generated based on the latest bedrock samples.
 
