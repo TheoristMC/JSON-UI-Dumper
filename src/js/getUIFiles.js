@@ -1,8 +1,15 @@
 /**
  * @typedef {{ type: string, name: string, download_url: string }[]} UIFile
- * @typedef {{ commit: { message: string, author: { name: string, date: string } } }[]} MetaData
+ * @typedef {Record<string, { version: string, date: string, type: string }>} UIVersion
  * @typedef {Promise<{ limit: number, used: number, remaining: number, reset: number }>} FetchRate
  */
+
+const params = new URLSearchParams(window.location.search);
+let paramType = params.get("version");
+
+if (paramType === "stable") paramType = "main";
+else if (paramType === "preview") paramType = "preview";
+else paramType = "main";
 
 /**
  * Get the git fetch rate
@@ -10,7 +17,9 @@
  */
 async function getFetchRate() {
   // Fetch via cloudfare worker
-  const response = await fetch(`https://git-proxy.json-ui-dumper.workers.dev/rate_limit`);
+  const response = await fetch(
+    `https://git-proxy.json-ui-dumper.workers.dev/rate_limit`,
+  );
   if (!response.ok) {
     throw new Error("Fetch rate limit failed:", response.status);
   }
@@ -18,36 +27,25 @@ async function getFetchRate() {
   return (await response.json()).rate;
 }
 
-const params = new URLSearchParams(window.location.search);
-let paramType = params.get("version");
-
-if (paramType === "stable") paramType = "main"
-else if (paramType === "preview") paramType = "preview"
-else paramType = "main"
-
 /**
- * Get the metadata of the latest commit on samples
- * @returns {Promise<{ version: string, authorName: string, date: string }>}
+ * Gets the latest version.
+ * @returns {Promise<UIVersion>}
  */
-async function getMetadata(path = "commits") {
+async function getVersion() {
   // Fetch via cloudfare worker
-  const response = await fetch(`https://git-proxy.json-ui-dumper.workers.dev/?path=${path}?sha=${paramType}`);
+  const response = await fetch(
+    `https://git-proxy.json-ui-dumper.workers.dev/?path=contents/version.json?ref=${paramType}`,
+  );
 
   if (!response.ok) {
-    throw new Error(`Git Metadata Fetch error: ${response.status}`);
+    throw new Error(`Git Version Fetch Error: ${response.status}`);
   }
 
-  /**
-   * @type {MetaData}
-   */
-  const metadata = await response.json();
+  let ver = await response.json();
+  ver = atob(ver.content);
+  ver = JSON.parse(ver);
 
-  const { author, message } = metadata[0].commit;
-  return {
-    version: message.replace("v", ""),
-    authorName: author.name,
-    date: author.date,
-  };
+  return ver;
 }
 
 /**
@@ -57,7 +55,9 @@ async function getMetadata(path = "commits") {
  */
 async function getAllUIFiles(path = "contents/resource_pack/ui") {
   // Fetch via cloudfare worker
-  const response = await fetch(`https://git-proxy.json-ui-dumper.workers.dev/?path=${path}?ref=${paramType}`);
+  const response = await fetch(
+    `https://git-proxy.json-ui-dumper.workers.dev/?path=${path}?ref=${paramType}`,
+  );
 
   if (!response.ok) {
     throw new Error(`Git File Fetch error: ${response.status}`);
@@ -74,7 +74,7 @@ async function getAllUIFiles(path = "contents/resource_pack/ui") {
     (file) =>
       file.type === "file" &&
       file.name.toLowerCase().endsWith(".json") &&
-      file.download_url
+      file.download_url,
   );
 
   return Promise.all(
@@ -84,8 +84,8 @@ async function getAllUIFiles(path = "contents/resource_pack/ui") {
         .catch(() => "");
 
       return { name: file.name, contents };
-    })
+    }),
   );
 }
 
-export { getAllUIFiles, getMetadata, getFetchRate };
+export { getAllUIFiles, getVersion, getFetchRate, paramType };

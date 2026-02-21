@@ -12,21 +12,23 @@ const props = defineProps({
 });
 
 import { computed, onMounted, ref } from 'vue';
-import { getMetadata } from '@/js/getUIFiles';
+import { getVersion, paramType } from '@/js/getUIFiles';
 
 const gameVersion = ref("(Loading...)");
+let gameType = "Stable";
+if (paramType === "stable") gameType = "Stable"
+else if (paramType === "preview") gameType = "Preview";
 
-onMounted(async() => {
+onMounted(async () => {
   try {
-    const metadata = await getMetadata();
-    gameVersion.value = metadata.version;
+    const version = await getVersion();
+    gameVersion.value = version.latest.version;
   } catch (err) {
-    console.error("Failed to load metadata:", err);
-    gameVersion.value = "???";
+    console.error("Failed to apply footer:", err);
   }
-});
+})
 
-const footerWithVersion = computed(() => `${props.footer ? `${props.footer}\n` : ""}Bedrock Stable v${gameVersion.value}`)
+const footerWithVersion = computed(() => `${props.footer ? `${props.footer}\n` : ""}Bedrock ${gameType} v${gameVersion.value}`)
 </script>
 
 <style scope>
