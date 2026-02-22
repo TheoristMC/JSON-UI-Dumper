@@ -44,7 +44,7 @@ function isPropBlacklisted(k) {
 
   // "common_cycler" is a UI control, not a property, but isAControl()
   // can't identify it since Mojang made it a bit tricky to identify
-  const blacklist = ["common_cycler"];
+  const blacklist = ["common_cycler", "cell_overlay"];
 
   return blacklist.includes(k);
 }
