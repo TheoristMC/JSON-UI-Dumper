@@ -7,17 +7,13 @@ You can choose the version you want to see:
 
 Dumps all available elements seen on the vanilla UI, generated based on the latest bedrock samples.
 
-## Goals
+## Roadmap
 
-- Better code format, supporting multiple colors and etc..
-- Allow users to switch between latest stable/preview
+- Better code format for the JSON dumps.
+- Allow users to switch across multiple versions.
+- Migrate from JS to TS.
 - ~~Dumps all properties with accuracies~~
 
-## Fix
-- Save checkbox states so even if the user scrolls, the checkbox is still expanded
+## Special Thanks
 
-## Credits
-
-[@MinecraftBedrockArabic](https://github.com/MinecraftBedrockArabic)
-  - Fonts is **100%** sourced from him
-  - Almost **80%** of CSS is *inspired* from him
+[@MinecraftBedrockArabic](https://github.com/MinecraftBedrockArabic) — for both indirectly and directly helping me with the CSS.

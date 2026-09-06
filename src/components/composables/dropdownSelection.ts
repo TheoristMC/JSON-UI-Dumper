@@ -1,0 +1,26 @@
+import { ref } from "vue";
+
+interface SelectionData {
+  label: string;
+  index: number;
+}
+
+class DropdownSelection {
+  private static selections = ref<Record<string, SelectionData>>({});
+
+  /**
+   * Sets a current selected data for a specific dropdown.
+   */
+  static setSelection(dropdownName: string, data: SelectionData) {
+    this.selections.value[dropdownName] = data;
+  }
+
+  /**
+   * Gets the current selected data from a specific dropdown.
+   */
+  static getSelection(dropdownName: string): SelectionData | undefined {
+    return this.selections.value[dropdownName];
+  }
+}
+
+export default DropdownSelection;

@@ -1,20 +1,36 @@
 @font-face {
-  font-family: 'MinecraftSeven';
-  src: url('https://raw.githubusercontent.com/Minato-mba/Minato-mba.github.io/main/assets/fonts/minecraft.otf') format('opentype');
+  font-family: "MinecraftSeven";
+  src: url("https://raw.githubusercontent.com/Minato-mba/Minato-mba.github.io/main/assets/fonts/minecraft.otf")
+    format("opentype");
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
-  font-family: 'MinecraftTen';
-  src: url('https://raw.githubusercontent.com/Minato-mba/Minato-mba.github.io/main/assets/fonts/minecraft-ten.ttf') format('truetype');
+  font-family: "MinecraftTen";
+  src: url("https://raw.githubusercontent.com/Minato-mba/Minato-mba.github.io/main/assets/fonts/minecraft-ten.ttf")
+    format("truetype");
   font-weight: bold;
   font-style: normal;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  overflow: hidden;
 }
 
 body {
   margin: 0;
   padding: 0;
-
   background-color: #48494a;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
 }
