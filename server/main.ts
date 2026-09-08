@@ -77,21 +77,26 @@ Deno.serve(async (req) => {
   }
 
   if (url.pathname === "/versions") {
-    const preview = await fetch(apiUrl + "commits?sha=preview", {
-      headers: fetchHeaders,
-    });
-    const main = await fetch(apiUrl + "commits?sha=main", {
+    let version = url.searchParams.get("version");
+    version =
+      version === "stable"
+        ? "main"
+        : version === "preview"
+          ? "preview"
+          : "main";
+
+    const commits = await fetch(apiUrl + `commits?sha=${version}`, {
       headers: fetchHeaders,
     });
 
-    const previewContent = await preview.json();
-    const stableContent = await main.json();
+    const content: { sha: string; commit: { message: string } }[] =
+      await commits.json();
 
     return new Response(
       JSON.stringify(
-        [...stableContent, ...previewContent].map((content) => ({
-          sha: content.sha,
-          text: content.commit.message,
+        content.map((v) => ({
+          sha: v.sha,
+          text: v.commit.message,
         })),
       ),
       {

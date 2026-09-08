@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 
 import Arrow from "../icons/Arrow.vue";
 import Check from "../icons/Check.vue";
@@ -48,13 +48,14 @@ const dropdown = withDefaults(defineProps<DropdownProps>(), {
 });
 
 const dropdownOpen = ref(false);
+const dropdownOpenable = ref(true);
 const selectedLabel = computed(
   () => DropdownSelection.getSelection(dropdown.dropdownName)?.label ?? "???",
 );
 
 function toggleDropdown() {
   const dropdownContent = document.getElementById(dropdown.dropdownName);
-  if (dropdownContent) {
+  if (dropdownContent && dropdownOpenable.value) {
     dropdownOpen.value = !dropdownOpen.value;
     dropdownContent.style.display = dropdownOpen.value ? "flex" : "none";
   }
@@ -68,7 +69,28 @@ function onSelect(label: string, indexSelected: number) {
   });
 }
 
-// Set the default selected data for the dropdown.
+// React whenever dropdownItems actually has data
+// therefore we support asynchronous data
+watch(
+  () => dropdown.dropdownItems,
+  (items) => {
+    if (DropdownSelection.getSelection(dropdown.dropdownName)) return;
+
+    dropdownOpenable.value = items.length !== 0;
+
+    if (items.length === 0) return;
+
+    const indexSelected = dropdown.defaultSelectedIndex;
+    const label = items[indexSelected];
+    if (label) {
+      DropdownSelection.setSelection(dropdown.dropdownName, {
+        label,
+        index: indexSelected,
+      });
+    }
+  },
+  { immediate: true },
+);
 onMounted(() => {
   const indexSelected = dropdown.defaultSelectedIndex;
   const label = dropdown.dropdownItems[indexSelected];
@@ -118,6 +140,7 @@ onMounted(() => {
   height: 20px;
   fill: #fff;
   margin: 0 24px 8px 0;
+  flex-shrink: 0;
 }
 
 .dropdown-item > input[type="radio"]:checked ~ .check {
@@ -125,9 +148,14 @@ onMounted(() => {
 }
 
 .dropdown-item > p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   margin: 0 0 0 15px;
   color: #fff;
   font-family: "MinecraftSeven";
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .dropdown-item:has(input[type="radio"]:hover) {

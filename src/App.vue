@@ -27,8 +27,27 @@ listContainer.value.scrollTop = 0; // });
 import Header from "./components/ui/Header.vue";
 import Dropdown from "./components/ui/Dropdown.vue";
 import TextField from "./components/ui/TextField.vue";
+import Metadata from "./components/composables/getMetadata.js";
+import { onMounted, ref } from "vue";
 
-const items = Array.from({ length: 10 }, (_, i) => `Item #${i + 1}`);
+const availableVersions = ref<string[]>([]);
+
+onMounted(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const version = params.get("version");
+
+  const versions = await Metadata.getVersions(
+    version === "stable"
+      ? "stable"
+      : version === "preview"
+        ? "preview"
+        : "stable",
+  );
+  
+  availableVersions.value = versions.map((v) =>
+    v[0] === "v" ? v.slice(1) : v,
+  );
+});
 </script>
 
 <template>
@@ -38,7 +57,7 @@ const items = Array.from({ length: 10 }, (_, i) => `Item #${i + 1}`);
     <Dropdown
       id="version-dropdown"
       dropdown-name="v-dropdown"
-      :dropdown-items="items"
+      :dropdown-items="availableVersions"
     ></Dropdown>
   </div>
   <main>
@@ -73,7 +92,7 @@ main {
   margin-bottom: 4px;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 600px) {
   .top-nav {
     display: flex;
     flex-direction: column;
