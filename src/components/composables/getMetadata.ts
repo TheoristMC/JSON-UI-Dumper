@@ -1,5 +1,3 @@
-import { URLSearchParams } from "node:url";
-
 const API_URL: string = import.meta.env.APP_API_URL;
 
 interface VersionItem {
