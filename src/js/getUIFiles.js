@@ -1,3 +1,5 @@
+const API_URL = import.meta.env.VITE_API_URL;
+
 /**
  * @typedef {{ type: string, name: string, download_url: string }[]} UIFile
  * @typedef {Record<string, { version: string, date: string, type: string }>} UIVersion
@@ -16,10 +18,7 @@ else paramType = "main";
  * @returns {FetchRate}
  */
 async function getFetchRate() {
-  // Fetch via cloudfare worker
-  const response = await fetch(
-    `https://git-proxy.json-ui-dumper.workers.dev/rate_limit`,
-  );
+  const response = await fetch(`${API_URL}/rate`);
   if (!response.ok) {
     throw new Error("Fetch rate limit failed:", response.status);
   }

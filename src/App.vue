@@ -73,7 +73,7 @@ main {
   margin-bottom: 4px;
 }
 
-@media (max-width: 500px) {
+@media (max-width: 700px) {
   .top-nav {
     display: flex;
     flex-direction: column;

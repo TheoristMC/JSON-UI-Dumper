@@ -1,9 +1,21 @@
-const allowedOrigins = ["https://theoristmc.github.io"];
+const PROD_ORIGINS = ["https://theoristmc.github.io"];
+const DEV_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:8000",
+  "http://localhost:5173",
+];
+
 const kv = await Deno.openKv();
+const environment = Deno.env.get("ENVIRONMENT");
 
 function getClientIp(req: Request): string {
   const forwarded = req.headers.get("X-Forwarded-For");
   return forwarded ? forwarded.split(",")[0].trim() : "";
+}
+
+function resolveAllowOrigin(origin: string | null, isDev: boolean): string {
+  const allowed = isDev ? [...PROD_ORIGINS, ...DEV_ORIGINS] : PROD_ORIGINS;
+  return origin && allowed.includes(origin) ? origin : PROD_ORIGINS[0];
 }
 
 /**
@@ -30,24 +42,24 @@ async function isRateLimited(ip: string): Promise<boolean> {
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("Origin");
-
-  const isAllowed = allowedOrigins.some(
-    (allowed) => origin && origin.startsWith(allowed),
-  );
-  if (!isAllowed) return new Response("Forbidden", { status: 403 });
+  const allowOrigin = resolveAllowOrigin(origin, environment === "development");
 
   // Ignore non-GET request methods
   if (req.method !== "GET") return new Response(null, { status: 405 });
 
   const GITHUB_TOKEN = Deno.env.get("GITHUB_TOKEN");
   if (!GITHUB_TOKEN)
-    return new Response("Missing GITHUB_TOKEN", { status: 500 });
+    return new Response("Missing GITHUB_TOKEN", {
+      status: 500,
+      headers: { "Access-Control-Allow-Origin": allowOrigin },
+    });
 
   const url = new URL(req.url);
   const apiUrl = "https://api.github.com/repos/Mojang/bedrock-samples/";
   const fetchHeaders: Record<string, string> = {
     Authorization: `Bearer ${GITHUB_TOKEN}`,
     "User-Agent": "Deno-Deploy",
+    "Access-Control-Allow-Origin": allowOrigin,
   };
 
   if (url.pathname === "/rate") {
@@ -59,7 +71,7 @@ Deno.serve(async (req) => {
       status: rate.status,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": origin ?? "",
+        "Access-Control-Allow-Origin": allowOrigin,
       },
     });
   }
@@ -85,7 +97,7 @@ Deno.serve(async (req) => {
       {
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": origin ?? "",
+          "Access-Control-Allow-Origin": allowOrigin,
         },
       },
     );
@@ -95,12 +107,16 @@ Deno.serve(async (req) => {
   if (!path) {
     return new Response("Missing ?path parameter", {
       status: 400,
-      headers: { "Access-Control-Allow-Origin": origin ?? "" },
+      headers: { "Access-Control-Allow-Origin": allowOrigin },
     });
   }
 
   const safeUrl = resolveSafeURL(apiUrl, path);
-  if (!safeUrl) return new Response("Invalid path", { status: 400 });
+  if (!safeUrl)
+    return new Response("Invalid path", {
+      status: 400,
+      headers: { "Access-Control-Allow-Origin": allowOrigin },
+    });
 
   const eTagEntry = await kv.get<string>(["etag", path]);
   const headers = { ...fetchHeaders };
@@ -110,7 +126,7 @@ Deno.serve(async (req) => {
   if (await isRateLimited(ip)) {
     return new Response("Too many request!", {
       status: 429,
-      headers: { "Access-Control-Allow-Origin": origin ?? "" },
+      headers: { "Access-Control-Allow-Origin": allowOrigin },
     });
   }
 
@@ -123,7 +139,7 @@ Deno.serve(async (req) => {
     return new Response(cached.value ?? "", {
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": origin ?? "",
+        "Access-Control-Allow-Origin": allowOrigin,
         "Cache-Control": "max-age=900",
         "X-Cache-Status": "ETag Not Modified",
       },
@@ -140,7 +156,7 @@ Deno.serve(async (req) => {
   return new Response(body, {
     headers: {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": origin ?? "",
+      "Access-Control-Allow-Origin": allowOrigin,
       "Cache-Control": "max-age=900",
       "X-Cache-Status": "Fetched Fresh",
     },
