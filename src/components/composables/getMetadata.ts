@@ -32,7 +32,7 @@ class Metadata {
    * @param isSHA Whether it should return a list of commit SHAs or version labels.
    */
   static async getVersions(
-    version: "stable" | "preview",
+    version: string,
     isSHA?: boolean,
   ): Promise<string[]> {
     try {

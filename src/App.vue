@@ -36,14 +36,8 @@ onMounted(async () => {
   const params = new URLSearchParams(window.location.search);
   const version = params.get("version");
 
-  const versions = await Metadata.getVersions(
-    version === "stable"
-      ? "stable"
-      : version === "preview"
-        ? "preview"
-        : "stable",
-  );
-  
+  const versions = await Metadata.getVersions(version ?? "stable");
+
   availableVersions.value = versions.map((v) =>
     v[0] === "v" ? v.slice(1) : v,
   );
@@ -57,6 +51,7 @@ onMounted(async () => {
     <Dropdown
       id="version-dropdown"
       dropdown-name="v-dropdown"
+      default-label="Loading..."
       :dropdown-items="availableVersions"
     ></Dropdown>
   </div>

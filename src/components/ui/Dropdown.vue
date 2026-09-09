@@ -40,17 +40,21 @@ import ScrollArea from "./ScrollArea.vue";
 interface DropdownProps {
   dropdownName: string;
   dropdownItems: string[];
+  defaultLabel?: string;
   defaultSelectedIndex?: number;
 }
 
 const dropdown = withDefaults(defineProps<DropdownProps>(), {
   defaultSelectedIndex: 0,
+  defaultLabel: "???",
 });
 
 const dropdownOpen = ref(false);
 const dropdownOpenable = ref(true);
 const selectedLabel = computed(
-  () => DropdownSelection.getSelection(dropdown.dropdownName)?.label ?? "???",
+  () =>
+    DropdownSelection.getSelection(dropdown.dropdownName)?.label ??
+    dropdown.defaultLabel,
 );
 
 function toggleDropdown() {
@@ -91,16 +95,6 @@ watch(
   },
   { immediate: true },
 );
-onMounted(() => {
-  const indexSelected = dropdown.defaultSelectedIndex;
-  const label = dropdown.dropdownItems[indexSelected];
-  if (label) {
-    DropdownSelection.setSelection(dropdown.dropdownName, {
-      label,
-      index: indexSelected,
-    });
-  }
-});
 </script>
 
 <style scoped>

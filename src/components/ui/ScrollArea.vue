@@ -1,10 +1,10 @@
 <template>
-  <div class="scroll-area" ref="viewport" @scroll="update">
+  <div class="scroll-area" ref="viewport" @scroll="render">
     <input
       class="scroll-bar"
       type="range"
       value="0"
-      @input="updateScrollManual"
+      @input="useScroll"
     />
     <div
       class="spacer"
@@ -32,7 +32,6 @@ import { onMounted, ref } from "vue";
 
 interface ScrollAreaProps {
   items: unknown[];
-  // itemHeight: number | (() => number);
   itemHeight: number;
   overscan?: number;
 }
@@ -45,7 +44,7 @@ const scrollArea = withDefaults(defineProps<ScrollAreaProps>(), {
   overscan: 1,
 });
 
-function updateScroll() {
+function renderScroll() {
   if (!viewport.value) return;
   const scrollBar = viewport.value.querySelector("input");
   if (!scrollBar) return;
@@ -62,15 +61,15 @@ function updateScroll() {
   scrollBar.value = `${viewport.value.scrollTop}`;
 }
 
-function updateScrollManual() {
+function useScroll() {
   if (!viewport.value) return;
   const scrollBar = viewport.value.querySelector("input");
   if (!scrollBar) return;
   viewport.value.scrollTop = scrollBar.valueAsNumber;
 }
 
-function update() {
-  updateScroll();
+function render() {
+  renderScroll();
 
   const scrollTop = viewport.value?.scrollTop ?? 0;
 
@@ -87,6 +86,9 @@ function update() {
   visibleContent.value = Array.from({ length: count }, (_, i) => start + i);
 }
 
+// This fixes a visual bug where the items won't update
+// if the scroll area is not visible first hand. Therefore
+// we update the viewport height immediately once available.
 onMounted(() => {
   if (viewport.value) {
     const observer = new ResizeObserver((entries) => {
@@ -94,7 +96,7 @@ onMounted(() => {
       if (height > 0) {
         observer.disconnect();
         viewportHeight.value = height;
-        update();
+        render();
       }
     });
     observer.observe(viewport.value);
