@@ -16,6 +16,8 @@ Dumps all available elements seen on the vanilla UI, generated based on the late
 
 ## Contributing
 
+This is just for me... or at least the future me.
+
 ### Frontend
 
 - Install the necessary modules, run `npm i` in the CLI.
@@ -28,11 +30,13 @@ Dumps all available elements seen on the vanilla UI, generated based on the late
   - Start by creating an `.env` file inside the `server/` folder and create the following keys:
     - `GITHUB_TOKEN` — You can input your own fine-grained token here; no permissions is fine.
     - `ENVIRONMENT` — The value of this key should be equal to `development`.
-  - Create a `db` folder inside the `server` folder.
+    - `UPSTASH_REDIS_REST_URL`:
+    - `UPSTASH_REDIS_REST_TOKEN`:
+      - Refer to the Redis dashboard.
   - To start the server, run the following in the CLI:
 
   ```
-  deno run --allow-read --allow-write --allow-net --allow-env --unstable-kv  --env-file=server/.env server/main.ts
+  deno run --allow-read --allow-write --allow-net --allow-env --env-file=server/.env server/main.ts
   ```
 
 ## Special Thanks

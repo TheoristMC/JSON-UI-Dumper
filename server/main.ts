@@ -1,24 +1,13 @@
-const PROD_ORIGINS = ["https://theoristmc.github.io"];
-const DEV_ORIGINS = [
-  "http://localhost:3000",
-  "http://localhost:8000",
-  "http://localhost:5173",
-];
+import { Redis } from "@upstash/redis";
 
+const redis = new Redis({
+  url: Deno.env.get("UPSTASH_REDIS_REST_URL"),
+  token: Deno.env.get("UPSTASH_REDIS_REST_TOKEN"),
+  automaticDeserialization: false,
+});
+
+const allowedOrigin = "https://theoristmc.github.io";
 const environment = Deno.env.get("ENVIRONMENT");
-const kv = await Deno.openKv(
-  environment === "development" ? "./server/db/dev-kv.sqlite3" : undefined,
-);
-
-function getClientIp(req: Request): string {
-  const forwarded = req.headers.get("X-Forwarded-For");
-  return forwarded ? forwarded.split(",")[0].trim() : "";
-}
-
-function resolveAllowOrigin(origin: string | null, isDev: boolean): string {
-  const allowed = isDev ? [...PROD_ORIGINS, ...DEV_ORIGINS] : PROD_ORIGINS;
-  return origin && allowed.includes(origin) ? origin : PROD_ORIGINS[0];
-}
 
 /**
  * Prevents people from accessing files outside of the base URL.
@@ -29,41 +18,51 @@ function resolveSafeURL(base: string, path: string): string | null {
   return resolve.href;
 }
 
-async function isRateLimited(ip: string): Promise<boolean> {
-  const bucket = Math.floor(Date.now() / 60_000);
-  const key = ["rate-limit", ip, bucket];
+/**
+ * Checks if the origin/referer is allowed to make a request.
+ */
+function originAllowed(req: Request): boolean {
+  const origin = req.headers.get("origin");
+  const referer = req.headers.get("referer");
 
-  const entry = await kv.get<number>(key);
-  const count = entry.value ?? 0;
+  if (origin) {
+    return origin === allowedOrigin;
+  }
 
-  if (count >= 15) return true;
+  if (referer) {
+    return referer.startsWith(allowedOrigin + "/") || referer === allowedOrigin;
+  }
 
-  await kv.set(key, count + 1, { expireIn: 60_000 });
   return false;
 }
 
+/**
+ * Tries to cache a value to the database with an hour of TTL.
+ */
 async function tryCache(
   path: string,
   eTag: string | null,
   body: string,
 ): Promise<void> {
-  // Deno KV has a 64KB limit per value (lameee)
-  if (!eTag || body.length >= 65536) return;
+  if (!eTag || body.length >= 1_000_000) return;
   try {
-    const res = await kv
-      .atomic()
-      .set(["etag", path], eTag)
-      .set(["cached-data", path], body)
-      .commit();
-    if (!res.ok) console.error("Atomic cache write failed");
+    const pipeline = redis.pipeline();
+    pipeline.set(`etag:${path}`, eTag, { ex: 3600 });
+    pipeline.set(`cached-data:${path}`, body, { ex: 3600 });
+
+    const response = await pipeline.exec();
+    if (!response) console.error("Unexpected error. Cache write failed.");
   } catch (err) {
     console.error("Cache write failed, skipping cache:", err);
   }
 }
 
 Deno.serve(async (req) => {
-  const origin = req.headers.get("Origin");
-  const allowOrigin = resolveAllowOrigin(origin, environment === "development");
+  const origin = req.headers.get("origin") ?? "";
+
+  if (!originAllowed(req) && environment !== "development") {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   try {
     // Ignore non-GET request methods
@@ -73,7 +72,7 @@ Deno.serve(async (req) => {
     if (!GITHUB_TOKEN)
       return new Response("Missing GITHUB_TOKEN", {
         status: 500,
-        headers: { "Access-Control-Allow-Origin": allowOrigin },
+        headers: { "Access-Control-Allow-Origin": origin },
       });
 
     const url = new URL(req.url);
@@ -81,7 +80,7 @@ Deno.serve(async (req) => {
     const fetchHeaders: Record<string, string> = {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
       "User-Agent": "Deno-Deploy",
-      "Access-Control-Allow-Origin": allowOrigin,
+      "Access-Control-Allow-Origin": origin,
     };
 
     if (url.pathname === "/rate") {
@@ -93,7 +92,7 @@ Deno.serve(async (req) => {
         status: rate.status,
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": allowOrigin,
+          "Access-Control-Allow-Origin": origin,
         },
       });
     }
@@ -130,7 +129,7 @@ Deno.serve(async (req) => {
         {
           headers: {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": allowOrigin,
+            "Access-Control-Allow-Origin": origin,
           },
         },
       );
@@ -140,7 +139,7 @@ Deno.serve(async (req) => {
     if (!path) {
       return new Response("Missing ?path parameter", {
         status: 400,
-        headers: { "Access-Control-Allow-Origin": allowOrigin },
+        headers: { "Access-Control-Allow-Origin": origin },
       });
     }
 
@@ -148,19 +147,14 @@ Deno.serve(async (req) => {
     if (!safeUrl)
       return new Response("Invalid path", {
         status: 400,
-        headers: { "Access-Control-Allow-Origin": allowOrigin },
+        headers: { "Access-Control-Allow-Origin": origin },
       });
 
-    const eTagEntry = await kv.get<string>(["etag", path]);
+    const eTagEntry = await redis.get<string>(`etag:${path}`);
     const headers = { ...fetchHeaders };
-    if (eTagEntry.value) headers["If-None-Match"] = eTagEntry.value;
-
-    const ip = getClientIp(req);
-    if (await isRateLimited(ip)) {
-      return new Response("Too many request!", {
-        status: 429,
-        headers: { "Access-Control-Allow-Origin": allowOrigin },
-      });
+    if (eTagEntry) {
+      const quoted = eTagEntry.startsWith('"') ? eTagEntry : `"${eTagEntry}"`;
+      headers["If-None-Match"] = quoted;
     }
 
     const apiResponse = await fetch(safeUrl, { headers });
@@ -171,13 +165,13 @@ Deno.serve(async (req) => {
 
     // If there was no change, pass back the cached value
     if (apiResponse.status === 304) {
-      const cached = await kv.get<string>(["cached-data", path]);
+      const cached = await redis.get<string>(`cached-data:${path}`);
 
-      if (cached.value) {
-        return new Response(cached.value, {
+      if (cached) {
+        return new Response(cached, {
           headers: {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": allowOrigin,
+            "Access-Control-Allow-Origin": origin,
             "Cache-Control": cacheControl,
             "X-Cache-Status": "ETag Not Modified",
           },
@@ -195,9 +189,9 @@ Deno.serve(async (req) => {
       return new Response(freshBody, {
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": allowOrigin,
+          "Access-Control-Allow-Origin": origin,
           "Cache-Control": cacheControl,
-          "X-Cache-Status": "Cache Miss On 304 - Refetched",
+          "X-Cache-Status": "Refetched",
         },
       });
     }
@@ -210,7 +204,7 @@ Deno.serve(async (req) => {
     return new Response(body, {
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": allowOrigin,
+        "Access-Control-Allow-Origin": origin,
         "Cache-Control": cacheControl,
         "X-Cache-Status": "Fetched Fresh",
       },
@@ -219,7 +213,7 @@ Deno.serve(async (req) => {
     console.error("Handler error:", err);
     return new Response(`Internal error: ${String(err)}`, {
       status: 500,
-      headers: { "Access-Control-Allow-Origin": allowOrigin },
+      headers: { "Access-Control-Allow-Origin": origin },
     });
   }
 });
