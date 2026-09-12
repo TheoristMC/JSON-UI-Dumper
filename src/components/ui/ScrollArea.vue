@@ -29,7 +29,7 @@
 <!-- https://dev.to/adamklein/build-your-own-virtual-scroll-part-ii-3j86 -->
 
 <script setup lang="ts" generic="T">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 interface ScrollAreaProps {
   items: T[];
@@ -126,7 +126,8 @@ function renderScroll() {
   const contentHeight = viewport.value.scrollHeight;
   const visibleHeight = viewport.value.clientHeight;
 
-  if (contentHeight <= visibleHeight) return (scroll.style.display = "none");
+  scroll.style.display = contentHeight <= visibleHeight ? "none" : "block";
+  if (contentHeight <= visibleHeight) return;
 
   const thumbHeight = (visibleHeight / contentHeight) * 100;
   scroll.style.setProperty("--thumb-height", `${thumbHeight}%`);
@@ -148,14 +149,16 @@ onMounted(() => {
     const observer = new ResizeObserver((entries) => {
       const height = entries[0].contentRect.height;
       if (height > 0) {
-        observer.disconnect();
         viewportHeight.value = height;
         render();
       }
     });
     observer.observe(viewport.value);
+    onUnmounted(() => observer.disconnect());
   }
 });
+
+watch(itemOffsets, () => throttleRender());
 </script>
 
 <style scoped>
