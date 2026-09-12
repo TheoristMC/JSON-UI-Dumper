@@ -16,7 +16,6 @@ withDefaults(defineProps<HeaderProps>(), {
 
 <style scoped>
 header {
-  flex: 0;
   background-color: #e6e8eb;
   padding: 10px;
   border-bottom: 6px solid #b1b2b5;

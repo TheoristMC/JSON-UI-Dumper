@@ -29,12 +29,8 @@ class Metadata {
 
   /**
    * Returns the available versions based on the Mojang samples.
-   * @param isSHA Whether it should return a list of commit SHAs or version labels.
    */
-  static async getVersions(
-    version: string,
-    isSHA?: boolean,
-  ): Promise<string[]> {
+  static async getVersions(version: string): Promise<VersionItem[]> {
     try {
       const versions = await fetch(`${API_URL}/versions?version=${version}`);
       if (!versions.ok)
@@ -42,16 +38,9 @@ class Metadata {
 
       const content: VersionItem[] = await versions.json();
 
-      let filteredContent = content.map((item) => {
-        if (isSHA) return item.sha;
-        else return item.text.split(" ")[0];
-      });
-
-      if (!isSHA) {
-        filteredContent = filteredContent.filter((version) =>
-          version.match(/^v?\d+(\.\d+)*(-preview)?$/),
-        );
-      }
+      const filteredContent = content.filter(({ text }) =>
+        text.match(/^v?\d+(\.\d+)*(-preview)?$/),
+      );
 
       return filteredContent;
     } catch (err) {
@@ -61,3 +50,4 @@ class Metadata {
 }
 
 export default Metadata;
+export type { VersionItem };

@@ -7,8 +7,8 @@
         :style="{ transform: dropdownOpen ? 'scaleY(1)' : 'scaleY(-1)' }"
       ></Arrow>
     </button>
-    <div :id="dropdownName" class="dropdown-content">
-      <ScrollArea :items="dropdownItems" :item-height="40">
+    <div v-show="dropdownOpen" class="dropdown-content">
+      <ScrollArea :items="dropdownItems" :item-height="() => 40">
         <template #default="{ item: label, index }">
           <div class="dropdown-item">
             <input
@@ -21,7 +21,12 @@
               @change="onSelect(label as string, index)"
             />
             <p>{{ label }}</p>
-            <Check class="check"></Check>
+            <Check
+              class="check"
+              v-if="
+                DropdownSelection.getSelection(dropdownName)?.index === index
+              "
+            ></Check>
           </div>
         </template>
       </ScrollArea>
@@ -30,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 import Arrow from "../icons/Arrow.vue";
 import Check from "../icons/Check.vue";
@@ -58,11 +63,7 @@ const selectedLabel = computed(
 );
 
 function toggleDropdown() {
-  const dropdownContent = document.getElementById(dropdown.dropdownName);
-  if (dropdownContent && dropdownOpenable.value) {
-    dropdownOpen.value = !dropdownOpen.value;
-    dropdownContent.style.display = dropdownOpen.value ? "flex" : "none";
-  }
+  dropdownOpen.value = !dropdownOpen.value && dropdownOpenable.value;
 }
 
 // Set the current selected data every time an item is clicked in the dropdown.
@@ -84,7 +85,12 @@ watch(
 
     if (items.length === 0) return;
 
-    const indexSelected = dropdown.defaultSelectedIndex;
+    const defaultIndex = dropdown.defaultSelectedIndex;
+    const indexSelected =
+      defaultIndex > dropdown.dropdownItems.length - 1 || defaultIndex < 0
+        ? 0
+        : defaultIndex;
+
     const label = items[indexSelected];
     if (label) {
       DropdownSelection.setSelection(dropdown.dropdownName, {
@@ -105,12 +111,13 @@ watch(
 /* DROPDOWN CONTENT */
 
 .dropdown-content {
-  display: none;
+  display: flex;
   position: absolute;
   width: 100%;
   max-height: 200px;
-  box-shadow: 0 0 0 2px #1a1a1b;
+  box-shadow: 0 0 0 2px #1e1e1f;
   transform: translateY(6px);
+  z-index: 2;
 }
 
 .dropdown-item {
@@ -133,7 +140,7 @@ watch(
   width: 20px;
   height: 20px;
   fill: #fff;
-  margin: 0 24px 8px 0;
+  margin: 0 24px 2px 0;
   flex-shrink: 0;
 }
 
@@ -178,13 +185,13 @@ watch(
   justify-content: space-between;
   padding: 8px 20px;
   background-color: #d0d1d4;
-  color: #1a1a1b;
+  color: #1e1e1f;
   border: 2px solid #e1e1e4;
   width: 100%;
   box-shadow:
     0px 4px 0px #58585a,
-    0 0 0 2px #1a1a1b,
-    0 4px 0 2px #1a1a1b;
+    0 0 0 2px #1e1e1f,
+    0 4px 0 2px #1e1e1f;
 }
 
 .dropdown:hover {
@@ -195,7 +202,7 @@ watch(
 .dropdown:active {
   background-color: #b1b2b5;
   border-color: #dcdcdc;
-  box-shadow: 0 0 0 2px #1a1a1b;
+  box-shadow: 0 0 0 2px #1e1e1f;
   transform: translateY(4px);
 }
 
@@ -209,6 +216,5 @@ watch(
   fill: #000;
   width: 20px;
   height: 20px;
-  margin: 1px 0;
 }
 </style>

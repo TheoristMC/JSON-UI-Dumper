@@ -1,6 +1,7 @@
 <template>
-  <div class="scroll-area" ref="viewport" @scroll="render">
+  <div class="scroll-area" ref="viewport" @scroll.passive="throttleRender">
     <input
+      ref="scrollBar"
       class="scroll-bar"
       type="range"
       value="0"
@@ -9,14 +10,14 @@
     <div
       class="spacer"
       :style="{
-        height: `${scrollArea.items.length * scrollArea.itemHeight}px`,
+        height: `${totalHeight}px`,
       }"
     >
       <div
         class="scroll-item"
         v-for="i in visibleContent"
         :key="i"
-        :style="{ transform: `translateY(${i * scrollArea.itemHeight}px)` }"
+        :style="{ transform: `translateY(${itemOffsets[i]}px)` }"
       >
         <slot :item="items[i]" :index="i" />
       </div>
@@ -27,16 +28,19 @@
 <!-- https://dev.to/adamklein/build-your-own-virtual-scroll-part-i-11ib -->
 <!-- https://dev.to/adamklein/build-your-own-virtual-scroll-part-ii-3j86 -->
 
-<script setup lang="ts">
-import { onMounted, ref } from "vue";
+<script setup lang="ts" generic="T">
+import { computed, onMounted, ref } from "vue";
 
 interface ScrollAreaProps {
-  items: unknown[];
-  itemHeight: number;
+  items: T[];
+  itemHeight: (index: number) => number;
   overscan?: number;
 }
 
+defineSlots<{ default(props: { item: T; index: number }): any }>();
+
 const viewport = ref<HTMLElement>();
+const scrollBar = ref<HTMLInputElement>();
 const viewportHeight = ref(0);
 const visibleContent = ref<number[]>([]);
 
@@ -44,46 +48,96 @@ const scrollArea = withDefaults(defineProps<ScrollAreaProps>(), {
   overscan: 1,
 });
 
-function renderScroll() {
-  if (!viewport.value) return;
-  const scrollBar = viewport.value.querySelector("input");
-  if (!scrollBar) return;
+const itemOffsets = computed<number[]>(() => {
+  const offsets = new Array(scrollArea.items.length + 1);
+  offsets[0] = 0;
+  for (let i = 0; i < scrollArea.items.length; i++) {
+    offsets[i + 1] = offsets[i] + scrollArea.itemHeight(i);
+  }
+  return offsets;
+});
 
-  const contentHeight = viewport.value.scrollHeight;
-  const visibleHeight = viewport.value.clientHeight;
+const totalHeight = computed<number>(
+  () => itemOffsets.value[scrollArea.items.length] ?? 0,
+);
 
-  if (contentHeight <= visibleHeight) return (scrollBar.style.display = "none");
+/**
+ * Finds the item index that should be visible at the given offset.
+ * @param target The source offset to be based on.
+ */
+function indexAtOffset(target: number): number {
+  const o = itemOffsets.value;
+  let low = 0;
+  let high = scrollArea.items.length - 1;
+  if (high < 0) return 0;
 
-  const thumbHeight = (visibleHeight / contentHeight) * 100;
-  scrollBar.style.setProperty("--thumb-height", `${thumbHeight}%`);
+  let candidate = scrollArea.items.length;
+  while (low <= high) {
+    // This is the same as diving the low and high to 2
+    const mid = (low + high) >> 1;
 
-  scrollBar.max = `${Math.max(0, contentHeight - visibleHeight)}`;
-  scrollBar.value = `${viewport.value.scrollTop}`;
+    if (o[mid] > target) {
+      candidate = mid;
+      high = mid - 1;
+    } else {
+      low = mid + 1;
+    }
+  }
+
+  return candidate;
 }
 
-function useScroll() {
-  if (!viewport.value) return;
-  const scrollBar = viewport.value.querySelector("input");
-  if (!scrollBar) return;
-  viewport.value.scrollTop = scrollBar.valueAsNumber;
+let ticking = false;
+function throttleRender() {
+  if (ticking) return;
+  ticking = true;
+  requestAnimationFrame(() => {
+    render();
+    ticking = false;
+  });
 }
 
 function render() {
   renderScroll();
 
+  if (scrollArea.items.length < 1) {
+    visibleContent.value = [];
+    return;
+  }
+
   const scrollTop = viewport.value?.scrollTop ?? 0;
 
-  let start =
-    Math.floor(scrollTop / scrollArea.itemHeight) - scrollArea.overscan;
+  let start = indexAtOffset(scrollTop) - scrollArea.overscan - 1;
   start = Math.max(0, start);
 
-  let count =
-    Math.ceil(viewportHeight.value / scrollArea.itemHeight) +
-    2 * scrollArea.overscan;
+  const viewportBottom = scrollTop + viewportHeight.value;
+  let end = indexAtOffset(viewportBottom) + scrollArea.overscan;
+  end = Math.min(scrollArea.items.length - 1, end);
 
-  count = Math.min(scrollArea.items.length - start, count);
+  const count = Math.max(0, end - start + 1);
 
   visibleContent.value = Array.from({ length: count }, (_, i) => start + i);
+}
+
+function renderScroll() {
+  const scroll = scrollBar.value;
+  if (!viewport.value || !scroll) return;
+
+  const contentHeight = viewport.value.scrollHeight;
+  const visibleHeight = viewport.value.clientHeight;
+
+  if (contentHeight <= visibleHeight) return (scroll.style.display = "none");
+
+  const thumbHeight = (visibleHeight / contentHeight) * 100;
+  scroll.style.setProperty("--thumb-height", `${thumbHeight}%`);
+
+  scroll.max = `${Math.max(0, contentHeight - visibleHeight)}`;
+  scroll.value = `${viewport.value.scrollTop}`;
+}
+
+function useScroll() {
+  if (!viewport.value || !scrollBar.value) return;
+  viewport.value.scrollTop = scrollBar.value.valueAsNumber;
 }
 
 // This fixes a visual bug where the items won't update
@@ -125,7 +179,7 @@ onMounted(() => {
 .scroll-bar {
   appearance: none;
   writing-mode: vertical-lr;
-  width: 8px;
+  width: 4px;
   position: fixed;
   height: calc(100% - 20px);
   top: 6px;
@@ -142,11 +196,13 @@ onMounted(() => {
 .scroll-bar::-webkit-slider-thumb {
   appearance: none;
   height: var(--thumb-height);
+  margin-left: -2px;
   width: 8px;
   background-color: #e6e8eb;
   border: 2px solid #f5f6f7;
   box-shadow:
     0px 4px 0px #58585a,
+    0px 6px 0px 2px rgba(0, 0, 0, 0.3),
     0 0 0 2px #000,
     0 4px 0 2px #000;
 }
