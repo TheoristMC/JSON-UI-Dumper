@@ -1,9 +1,6 @@
-const API_URL: string = import.meta.env.APP_API_URL;
+import type { VersionItem } from "../types/metadata.d.ts";
 
-interface VersionItem {
-  sha: string;
-  text: string;
-}
+const API_URL: string = import.meta.env.APP_API_URL;
 
 interface Rate {
   remaining: number;
@@ -50,4 +47,3 @@ class Metadata {
 }
 
 export default Metadata;
-export type { VersionItem };

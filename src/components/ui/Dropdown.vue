@@ -39,8 +39,9 @@ import { computed, ref, watch } from "vue";
 
 import Arrow from "../icons/Arrow.vue";
 import Check from "../icons/Check.vue";
-import DropdownSelection from "../composables/dropdownSelection.js";
 import ScrollArea from "./ScrollArea.vue";
+
+import DropdownSelection from "../../composables/useDropdownSelection.ts";
 
 interface DropdownProps {
   dropdownName: string;
@@ -137,8 +138,8 @@ watch(
 
 .dropdown-item > .check {
   display: none;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   fill: #fff;
   margin: 0 24px 2px 0;
   flex-shrink: 0;
@@ -214,7 +215,8 @@ watch(
 
 .dropdown > .arrow {
   fill: #000;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
 }
 </style>

@@ -2,7 +2,7 @@ import { createApp } from "vue";
 import "./assets/main.css";
 
 import App from "./App.vue";
-import Metadata from "./components/composables/getMetadata.ts";
+import Metadata from "./services/getMetadata.ts";
 
 createApp(App).mount("#app");
 

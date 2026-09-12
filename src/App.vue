@@ -24,22 +24,25 @@ listContainer.value = el; // }; // const { containerProps, wrapperProps, list }
 watch(searchQuery, async() => { // await nextTick() // if (listContainer.value)
 listContainer.value.scrollTop = 0; // });
 <script setup lang="ts">
+import { onMounted, ref, watch } from "vue";
+
 import Header from "./components/ui/Header.vue";
 import Dropdown from "./components/ui/Dropdown.vue";
 import TextField from "./components/ui/TextField.vue";
-import Metadata, { VersionItem } from "./components/composables/getMetadata.js";
-import DropdownSelection from "./components/composables/dropdownSelection.ts";
-
-import { onMounted, ref, watch } from "vue";
-import Files from "./components/composables/getFiles.ts";
 import PropertyItem from "./components/ui/PropertyItem.vue";
 import ScrollArea from "./components/ui/ScrollArea.vue";
+
+import Files from "./services/getFiles.ts";
+import Metadata from "./services/getMetadata.ts";
+import DropdownSelection from "./composables/useDropdownSelection.ts";
+
+import type { VersionItem } from "./types/metadata";
 
 const availableVersions = ref<VersionItem[]>([]);
 const selectedVersionIndex = ref<number>(0);
 
 const items = ref(
-  Array.from({ length: 30 }, (_, i) => ({
+  Array.from({ length: 100 }, (_, i) => ({
     code: crypto.randomUUID(),
     isExpanded: false,
   })),
@@ -158,6 +161,7 @@ main {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  background-color: green;
   transform: translateZ(0); /* Necessary so the scroll bar inherit the height */
 }
 
