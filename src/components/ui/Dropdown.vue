@@ -78,19 +78,17 @@ function onSelect(label: string, indexSelected: number) {
 // React whenever dropdownItems actually has data
 // therefore we support asynchronous data
 watch(
-  () => dropdown.dropdownItems,
-  (items) => {
-    if (DropdownSelection.getSelection(dropdown.dropdownName)) return;
+  () => [dropdown.dropdownItems, dropdown.defaultSelectedIndex] as const,
+  ([items, defaultIndex]) => {
+    if (items.length === 0) {
+      dropdownOpenable.value = false;
+      return;
+    }
 
-    dropdownOpenable.value = items.length !== 0;
+    dropdownOpenable.value = true;
 
-    if (items.length === 0) return;
-
-    const defaultIndex = dropdown.defaultSelectedIndex;
     const indexSelected =
-      defaultIndex > dropdown.dropdownItems.length - 1 || defaultIndex < 0
-        ? 0
-        : defaultIndex;
+      defaultIndex > items.length - 1 || defaultIndex < 0 ? 0 : defaultIndex;
 
     const label = items[indexSelected];
     if (label) {

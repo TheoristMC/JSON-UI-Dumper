@@ -2,12 +2,19 @@
   <Header title="JSON-UI Dumper"></Header>
   <main>
     <div class="nav">
+      <Radio
+        id="version-radio"
+        radio-name="version-radio"
+        :items="radioItems"
+        :default-selected-index="selectedRadio"
+        v-on:radio-click="useVersionRadio"
+      ></Radio>
       <Dropdown
         id="version-dropdown"
         dropdown-name="v-dropdown"
         default-label="Loading..."
         :default-selected-index="selectedVersionIndex"
-        :dropdown-items="availableVersions.map((v) => v.text)"
+        :dropdown-items="dropdownVersionLabels"
       ></Dropdown>
     </div>
     <div class="main">
@@ -49,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import Header from "../components/ui/Header.vue";
@@ -57,6 +64,7 @@ import Dropdown from "../components/ui/Dropdown.vue";
 import TextField from "../components/ui/TextField.vue";
 import PropertyItem from "../components/ui/PropertyItem.vue";
 import ScrollArea from "../components/ui/ScrollArea.vue";
+import Radio from "../components/ui/Radio.vue";
 
 import Files from "../services/getFiles.ts";
 import Metadata from "../services/getMetadata.ts";
@@ -64,12 +72,22 @@ import DropdownSelection from "../composables/useDropdownSelection.ts";
 import UIProperties from "../utils/parseProperties.ts";
 
 import type { VersionItem } from "../types/metadata";
+import type { RadioItem } from "../types/radio";
 
 const availableVersions = ref<VersionItem[]>([]);
 const selectedVersionIndex = ref<number>(0);
 
 const isContentLoading = ref(false);
 const items = ref<{ name: string; code: string; isExpanded: boolean }[]>([]);
+const dropdownVersionLabels = computed(() =>
+  availableVersions.value.map((v) => v.text),
+);
+
+const selectedRadio = ref(0);
+const radioItems = [
+  { label: "Stable", value: "stable" },
+  { label: "Preview", value: "preview" },
+] as RadioItem[];
 
 const route = useRoute();
 const router = useRouter();
@@ -82,6 +100,11 @@ function handleToggle(index: number) {
 function getItemHeight(index: number): number {
   const toggle = items.value[index];
   return toggle.isExpanded ? 200 : 61.6;
+}
+
+function useVersionRadio(index: number) {
+  const selectedValue = radioItems[index].value;
+  router.replace({ query: { ...route.query, version: selectedValue } });
 }
 
 let currentRequest = 0;
@@ -115,6 +138,9 @@ watch(
   async (v) => {
     if (!v) return;
 
+    // Return if there is no changes
+    if (Number(route.query.index) === v.index) return;
+
     // Change the route query first
     await router.replace({ query: { ...route.query, index: v.index } });
 
@@ -123,16 +149,31 @@ watch(
   },
 );
 
-onMounted(async () => {
-  const url = new URL(window.location.href);
-  const version = url.searchParams.get("version");
-  const versionIndex = url.searchParams.get("index");
+watch(
+  () => route.query,
+  async (query) => {
+    const version = query.version as string;
+    const versionIndex = query.index as string;
 
-  if (versionIndex) selectedVersionIndex.value = parseInt(versionIndex) || 0;
+    if (versionIndex) selectedVersionIndex.value = parseInt(versionIndex) || 0;
+    if (version) {
+      const index = radioItems.findIndex(({ value }) => value === version);
+      selectedRadio.value = index === -1 ? 0 : index;
+    }
 
-  const versions = await Metadata.getVersions(version ?? "stable");
-  availableVersions.value = versions;
-});
+    const requestVersion = version; // cache the initial request
+    const fetchVersion = await Metadata.getVersions(version);
+
+    // Only apply if it's not stale
+    if (requestVersion === route.query.version) {
+      availableVersions.value = fetchVersion;
+
+      const selected = availableVersions.value[selectedVersionIndex.value];
+      if (selected) await updateItems(selected.sha);
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>
@@ -184,6 +225,10 @@ main {
   background-color: green;
   position: relative;
   transform: translateZ(0); /* Necessary so the scroll bar inherit the height */
+}
+
+#version-radio {
+  margin-bottom: 8px;
 }
 
 #search-bar {
