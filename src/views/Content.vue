@@ -25,7 +25,7 @@ const codeContent = ref<string>("");
 let previousParams: LocationQueryRaw | undefined;
 const onBack = () => {
   router
-    .replace({ path: "/", query: previousParams })
+    .push({ path: "/", query: previousParams })
     .then(() => window.location.reload());
 
   // Reset the storage since it's not needed if the user left the page.

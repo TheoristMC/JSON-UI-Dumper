@@ -50,6 +50,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 import Header from "../components/ui/Header.vue";
 import Dropdown from "../components/ui/Dropdown.vue";
@@ -66,9 +67,12 @@ import type { VersionItem } from "../types/metadata";
 
 const availableVersions = ref<VersionItem[]>([]);
 const selectedVersionIndex = ref<number>(0);
-const isContentLoading = ref(false);
 
+const isContentLoading = ref(false);
 const items = ref<{ name: string; code: string; isExpanded: boolean }[]>([]);
+
+const route = useRoute();
+const router = useRouter();
 
 function handleToggle(index: number) {
   const toggle = items.value[index];
@@ -111,10 +115,10 @@ watch(
   async (v) => {
     if (!v) return;
 
-    const url = new URL(window.location.href);
-    url.searchParams.set("index", v.index.toString());
-    window.history.pushState({}, "", url);
+    // Change the route query first
+    await router.replace({ query: { ...route.query, index: v.index } });
 
+    // then update items.
     await updateItems(availableVersions.value[v.index].sha);
   },
 );

@@ -68,7 +68,7 @@ const enlarge = () => {
   } as StorageData;
 
   sessionStorage.setItem(`payload-${codeId}`, JSON.stringify({ content }));
-  router.replace(`/content?codeId=${codeId}`);
+  router.push(`/content?codeId=${codeId}`);
 };
 </script>
 
