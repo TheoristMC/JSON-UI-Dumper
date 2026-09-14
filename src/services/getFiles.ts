@@ -1,11 +1,8 @@
 import JSON5 from "json5";
 
-const API_URL: string = import.meta.env.APP_API_URL;
+import type { BadFile, File } from "../types/file.d.ts";
 
-interface File<T> {
-  name: string;
-  content: T;
-}
+const API_URL: string = import.meta.env.APP_API_URL;
 
 interface FetchedFile {
   type: "file" | "dir";
@@ -52,10 +49,19 @@ class Files {
     }
   }
 
-  static parsedFiles(files: File<string>[]): File<Record<string, string>>[] {
+  static parsedFiles(files: File<string>[]): (File<object> | BadFile)[] {
     return files.map((v) => {
-      const parsedContent = JSON5.parse(v.content);
-      return { name: v.name, content: parsedContent };
+      try {
+        const parsedContent = JSON5.parse(v.content);
+        return { name: v.name, content: parsedContent };
+      } catch (err) {
+        return {
+          name: v.name,
+          content: {
+            badError: (err as Error).message,
+          },
+        } as BadFile;
+      }
     });
   }
 }

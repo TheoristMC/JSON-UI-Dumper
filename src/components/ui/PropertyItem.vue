@@ -10,9 +10,12 @@
       <p class="checkbox-content">
         {{ code }}
       </p>
-      <button @click="copy" class="copy-b">
-        <Copy v-if="!isCopied" class="copy-icon"></Copy>
-        <Check v-if="isCopied" class="check-icon"></Check>
+      <button @click="copy" class="content-b" style="top: 8px; right: 24px">
+        <Copy v-if="!isCopied" class="icon-hoverable"></Copy>
+        <Check v-if="isCopied" class="icon"></Check>
+      </button>
+      <button @click="enlarge" class="content-b" style="top: 8px; right: 56px">
+        <Link class="icon-hoverable"></Link>
       </button>
     </div>
   </div>
@@ -20,9 +23,13 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 import Check from "../icons/Check.vue";
 import Copy from "../icons/Copy.vue";
+import Link from "../icons/Link.vue";
+
+import type { StorageData } from "../../types/storage";
 
 interface PropertyItemProps {
   title?: string;
@@ -35,6 +42,9 @@ const props = withDefaults(defineProps<PropertyItemProps>(), { title: "???" });
 const emit = defineEmits<{ toggle: [] }>();
 const isCopied = ref(false);
 
+const route = useRoute();
+const router = useRouter();
+
 const copy = async () => {
   if (isCopied.value) return;
 
@@ -46,6 +56,19 @@ const copy = async () => {
   } catch (err) {
     console.error("Failed to copy text: ", err);
   }
+};
+
+const enlarge = () => {
+  const codeId = crypto.randomUUID().split("-")[0];
+
+  const content = {
+    title: props.title,
+    code: props.code,
+    previousParams: route.query,
+  } as StorageData;
+
+  sessionStorage.setItem(`payload-${codeId}`, JSON.stringify({ content }));
+  router.replace(`/content?codeId=${codeId}`);
 };
 </script>
 
@@ -65,8 +88,12 @@ const copy = async () => {
 }
 
 .checkbox-nav > p {
-  flex: 1;
-  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  text-wrap: nowrap;
+  margin: 0 8px 0 0;
   font-family: "MinecraftSeven";
   color: #fff;
 }
@@ -86,32 +113,30 @@ const copy = async () => {
   height: 138.4px; /* 200px - button_height */
 }
 
-.copy-b {
+.content-b {
   position: absolute;
   appearance: none;
   background: none;
   border: none;
-  top: 8px;
-  right: 24px;
   width: 30px;
   height: 30px;
 }
 
-.copy-b > .copy-icon {
+.content-b:hover {
+  outline: 2px solid #fff;
+}
+
+.icon-hoverable {
   height: 100%;
   width: 100%;
   color: #d0d1d4;
 }
 
-.copy-b:hover {
-  outline: 2px solid #fff;
-}
-
-.copy-b:hover > .copy-icon {
+*:hover > .icon-hoverable {
   color: #fff;
 }
 
-.copy-b > .check-icon {
+.icon {
   height: 100%;
   width: 100%;
   fill: #fff;

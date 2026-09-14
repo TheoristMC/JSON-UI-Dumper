@@ -3,8 +3,11 @@ import "./assets/main.css";
 
 import App from "./App.vue";
 import Metadata from "./services/getMetadata.ts";
+import router from "./router.ts";
 
-createApp(App).mount("#app");
+const app = createApp(App);
+app.use(router);
+app.mount("#app");
 
 (async () => {
   const rate = await Metadata.getRate();
