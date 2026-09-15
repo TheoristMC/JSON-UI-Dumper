@@ -22,7 +22,7 @@
         <TextField
           id="search-bar"
           placeholder="Search properties..."
-          v-on:change="searchItems"
+          v-on:on-search="searchItems"
         ></TextField>
       </div>
       <div class="content">

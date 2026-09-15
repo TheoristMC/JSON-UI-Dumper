@@ -17,17 +17,15 @@ import debounce from "../../composables/useDebounce";
 interface TextFieldProps {
   placeholder?: string;
   id: string;
-  onChange?: (query: string) => void;
 }
 
+const searchQuery = ref<string>("");
+const emit = defineEmits<{ onSearch: [query: string] }>();
 const props = withDefaults(defineProps<TextFieldProps>(), {
   placeholder: "...",
-  onChange: () => null,
 });
 
-const searchQuery = ref<string>("");
-
-const handleSearch = debounce((query: string) => props.onChange(query), 500);
+const handleSearch = debounce((query: string) => emit("onSearch", query), 500);
 
 watch(searchQuery, handleSearch);
 </script>
