@@ -5,16 +5,31 @@
     :id="id"
     autocomplete="off"
     spellcheck="false"
+    v-model="searchQuery"
   />
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from "vue";
+
+import debounce from "../../composables/useDebounce";
+
 interface TextFieldProps {
   placeholder?: string;
   id: string;
+  onChange?: (query: string) => void;
 }
 
-defineProps<TextFieldProps>();
+const props = withDefaults(defineProps<TextFieldProps>(), {
+  placeholder: "...",
+  onChange: () => null,
+});
+
+const searchQuery = ref<string>("");
+
+const handleSearch = debounce((query: string) => props.onChange(query), 500);
+
+watch(searchQuery, handleSearch);
 </script>
 
 <style scoped>

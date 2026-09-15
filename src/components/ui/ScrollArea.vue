@@ -29,7 +29,7 @@
 <!-- https://dev.to/adamklein/build-your-own-virtual-scroll-part-ii-3j86 -->
 
 <script setup lang="ts" generic="T">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 
 interface ScrollAreaProps {
   items: T[];
@@ -97,11 +97,11 @@ function throttleRender() {
   });
 }
 
-function render() {
-  renderScroll();
-
+async function render() {
   if (scrollArea.items.length < 1) {
     visibleContent.value = [];
+    await nextTick();
+    renderScroll();
     return;
   }
 
@@ -117,6 +117,10 @@ function render() {
   const count = Math.max(0, end - start + 1);
 
   visibleContent.value = Array.from({ length: count }, (_, i) => start + i);
+
+  // Update the scrollbar too
+  await nextTick();
+  renderScroll();
 }
 
 function renderScroll() {
@@ -158,7 +162,7 @@ onMounted(() => {
   }
 });
 
-watch(itemOffsets, () => throttleRender());
+watch(itemOffsets, () => render());
 </script>
 
 <style scoped>

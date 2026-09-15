@@ -22,6 +22,7 @@
         <TextField
           id="search-bar"
           placeholder="Search properties..."
+          v-on:change="searchItems"
         ></TextField>
       </div>
       <div class="content">
@@ -34,19 +35,19 @@
         />
         <!-- Content -->
         <ScrollArea
-          :items="items"
+          :items="filteredItems"
           :item-height="getItemHeight"
           :style="{
             opacity: isContentLoading ? 0.5 : 1,
             'pointer-events': isContentLoading ? 'none' : 'auto',
           }"
         >
-          <template #default="{ item, index }"
+          <template #default="{ item }"
             ><PropertyItem
               :code="item.code"
-              :expanded="items[index].isExpanded"
-              :title="items[index].name"
-              v-on:toggle="handleToggle(index)"
+              :expanded="item.isExpanded"
+              :title="item.name"
+              v-on:toggle="handleToggle(item)"
             ></PropertyItem
           ></template>
         </ScrollArea>
@@ -74,14 +75,28 @@ import UIProperties from "../utils/parseProperties.ts";
 import type { VersionItem } from "../types/metadata";
 import type { RadioItem } from "../types/radio";
 
+interface Item {
+  name: string;
+  code: string;
+  isExpanded: boolean;
+}
+
 const availableVersions = ref<VersionItem[]>([]);
 const selectedVersionIndex = ref<number>(0);
-
-const isContentLoading = ref(false);
-const items = ref<{ name: string; code: string; isExpanded: boolean }[]>([]);
 const dropdownVersionLabels = computed(() =>
   availableVersions.value.map((v) => v.text),
 );
+
+const items = ref<Item[]>([]);
+const isContentLoading = ref(false);
+
+const searchQuery = ref("");
+const filteredItems = computed(() => {
+  if (!searchQuery.value) return items.value;
+  return items.value.filter(({ name }) =>
+    name.toLowerCase().includes(searchQuery.value),
+  );
+});
 
 const selectedRadio = ref(0);
 const radioItems = [
@@ -92,19 +107,22 @@ const radioItems = [
 const route = useRoute();
 const router = useRouter();
 
-function handleToggle(index: number) {
-  const toggle = items.value[index];
-  toggle.isExpanded = !toggle.isExpanded;
+function handleToggle(target: Item) {
+  const toggle = items.value.find(({ name }) => name === target.name);
+  if (toggle) toggle.isExpanded = !toggle.isExpanded;
 }
 
 function getItemHeight(index: number): number {
-  const toggle = items.value[index];
-  return toggle.isExpanded ? 200 : 61.6;
+  return filteredItems.value[index].isExpanded ? 200 : 61.6;
 }
 
 function useVersionRadio(index: number) {
   const selectedValue = radioItems[index].value;
   router.replace({ query: { ...route.query, version: selectedValue } });
+}
+
+function searchItems(query: string) {
+  searchQuery.value = query.toLowerCase();
 }
 
 let currentRequest = 0;
@@ -155,7 +173,7 @@ watch(
     const version = query.version as string;
     const versionIndex = query.index as string;
 
-    if (versionIndex) selectedVersionIndex.value = parseInt(versionIndex) || 0;
+    if (versionIndex) selectedVersionIndex.value = Number(versionIndex) || 0;
     if (version) {
       const index = radioItems.findIndex(({ value }) => value === version);
       selectedRadio.value = index === -1 ? 0 : index;
