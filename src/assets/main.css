@@ -31,3 +31,26 @@ body {
   flex-direction: column;
   height: 100%;
 }
+
+.secondary-button {
+  appearance: none;
+  padding: 8px 20px;
+  background-color: #d0d1d4;
+  border: 2px solid #e1e1e4;
+  box-shadow:
+    0px 4px 0px #58585a,
+    0 0 0 2px #1e1e1f,
+    0 4px 0 2px #1e1e1f;
+}
+
+.secondary-button:hover {
+  background-color: #b1b2b5;
+  border: 2px solid #f4f6f9;
+}
+
+.secondary-button:active {
+  background-color: #b1b2b5;
+  border: 2px solid #dcdcdc;
+  box-shadow: 0 0 0 2px #1e1e1f;
+  transform: translateY(4px);
+}

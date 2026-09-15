@@ -5,7 +5,10 @@
     back-button="left"
   ></Header>
   <p class="title">{{ codeTitle }}</p>
-  <p class="content">{{ codeContent }}</p>
+  <p class="content">
+    <ScrollBar></ScrollBar>
+    {{ codeContent }}
+  </p>
 </template>
 
 <script setup lang="ts">
@@ -13,6 +16,7 @@ import { onMounted, onUnmounted, ref } from "vue";
 import { LocationQueryRaw, useRoute, useRouter } from "vue-router";
 
 import Header from "../components/ui/Header.vue";
+import ScrollBar from "../components/ui/ScrollBar.vue";
 
 import type { StorageData } from "../types/storage";
 
@@ -70,14 +74,16 @@ onUnmounted(onBack);
 .content {
   flex: 1;
   min-height: 0;
-  margin: 0;
   padding: 10px 20px 10px 20.5px;
   border-top: 2px solid #1e1e1f;
   border-bottom: 2px solid #1e1e1f;
   background-color: #313233;
+  margin: 0;
   white-space: pre-wrap;
   color: #d0d1d4;
   font-family: "MinecraftSeven";
   overflow-y: auto;
+  scrollbar-width: none;
+  position: relative;
 }
 </style>

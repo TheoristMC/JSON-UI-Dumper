@@ -242,7 +242,6 @@ main {
   flex-direction: column;
   background-color: green;
   position: relative;
-  transform: translateZ(0); /* Necessary so the scroll bar inherit the height */
 }
 
 #version-radio {

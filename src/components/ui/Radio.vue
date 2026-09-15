@@ -54,9 +54,9 @@ onMounted(() => {
 
 .radio-container {
   position: relative;
-  padding: 10px 20px;
-  background-color: #d0d1d4;
+  padding: 8px 20px;
   color: #1e1e1f;
+  background-color: #d0d1d4;
   border: 2px solid #e1e1e4;
   box-shadow:
     0px 4px 0px #58585a,

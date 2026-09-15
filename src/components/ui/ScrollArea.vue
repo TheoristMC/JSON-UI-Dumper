@@ -1,12 +1,6 @@
 <template>
   <div class="scroll-area" ref="viewport" @scroll.passive="throttleRender">
-    <input
-      ref="scrollBar"
-      class="scroll-bar"
-      type="range"
-      value="0"
-      @input="useScroll"
-    />
+    <ScrollBar :is-scroll-dynamic="true"></ScrollBar>
     <div
       class="spacer"
       :style="{
@@ -29,7 +23,9 @@
 <!-- https://dev.to/adamklein/build-your-own-virtual-scroll-part-ii-3j86 -->
 
 <script setup lang="ts" generic="T">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+
+import ScrollBar from "./ScrollBar.vue";
 
 interface ScrollAreaProps {
   items: T[];
@@ -40,7 +36,6 @@ interface ScrollAreaProps {
 defineSlots<{ default(props: { item: T; index: number }): any }>();
 
 const viewport = ref<HTMLElement>();
-const scrollBar = ref<HTMLInputElement>();
 const viewportHeight = ref(0);
 const visibleContent = ref<number[]>([]);
 
@@ -97,11 +92,9 @@ function throttleRender() {
   });
 }
 
-async function render() {
+function render() {
   if (scrollArea.items.length < 1) {
     visibleContent.value = [];
-    await nextTick();
-    renderScroll();
     return;
   }
 
@@ -117,32 +110,6 @@ async function render() {
   const count = Math.max(0, end - start + 1);
 
   visibleContent.value = Array.from({ length: count }, (_, i) => start + i);
-
-  // Update the scrollbar too
-  await nextTick();
-  renderScroll();
-}
-
-function renderScroll() {
-  const scroll = scrollBar.value;
-  if (!viewport.value || !scroll) return;
-
-  const contentHeight = viewport.value.scrollHeight;
-  const visibleHeight = viewport.value.clientHeight;
-
-  scroll.style.display = contentHeight <= visibleHeight ? "none" : "block";
-  if (contentHeight <= visibleHeight) return;
-
-  const thumbHeight = (visibleHeight / contentHeight) * 100;
-  scroll.style.setProperty("--thumb-height", `${thumbHeight}%`);
-
-  scroll.max = `${Math.max(0, contentHeight - visibleHeight)}`;
-  scroll.value = `${viewport.value.scrollTop}`;
-}
-
-function useScroll() {
-  if (!viewport.value || !scrollBar.value) return;
-  viewport.value.scrollTop = scrollBar.value.valueAsNumber;
 }
 
 // This fixes a visual bug where the items won't update
@@ -181,36 +148,5 @@ watch(itemOffsets, () => render());
 .scroll-item {
   position: absolute;
   width: 100%;
-}
-
-.scroll-bar {
-  appearance: none;
-  writing-mode: vertical-lr;
-  width: 4px;
-  position: fixed;
-  height: calc(100% - 20px);
-  top: 6px;
-  right: 6px;
-  z-index: 1;
-  --thumb-height: 0%;
-}
-
-.scroll-bar::-webkit-slider-runnable-track {
-  background-color: #58585a;
-  width: 100%;
-}
-
-.scroll-bar::-webkit-slider-thumb {
-  appearance: none;
-  height: var(--thumb-height);
-  margin-left: -2px;
-  width: 8px;
-  background-color: #e6e8eb;
-  border: 2px solid #f5f6f7;
-  box-shadow:
-    0px 4px 0px #58585a,
-    0px 6px 0px 2px rgba(0, 0, 0, 0.3),
-    0 0 0 2px #000,
-    0 4px 0 2px #000;
 }
 </style>

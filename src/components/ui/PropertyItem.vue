@@ -2,7 +2,7 @@
   <div class="checkbox-container">
     <div class="checkbox-nav">
       <p>{{ title }}</p>
-      <button @click="emit('toggle')" class="button expand-b">
+      <button @click="emit('toggle')" class="secondary-button expand-b">
         {{ expanded ? "Collapse" : "Expand" }}
       </button>
     </div>
@@ -142,29 +142,8 @@ const enlarge = () => {
   fill: #fff;
 }
 
-.button {
-  appearance: none;
-  padding: 8px 20px;
+.expand-b {
   margin: 0 4px 4px 0;
-  background-color: #d0d1d4;
-  color: #1e1e1f;
-  border: 2px solid #e1e1e4;
   font-family: "MinecraftSeven";
-  box-shadow:
-    0px 4px 0px #58585a,
-    0 0 0 2px #1e1e1f,
-    0 4px 0 2px #1e1e1f;
-}
-
-.button:hover {
-  background-color: #b1b2b5;
-  border-color: #f4f6f9;
-}
-
-.button:active {
-  background-color: #b1b2b5;
-  border-color: #dcdcdc;
-  box-shadow: 0 0 0 2px #1e1e1f;
-  transform: translateY(4px);
 }
 </style>

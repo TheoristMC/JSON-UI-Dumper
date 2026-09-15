@@ -1,6 +1,6 @@
 <template>
   <div class="dropdown-container">
-    <button @click.stop="toggleDropdown" class="dropdown">
+    <button @click.stop="toggleDropdown" class="secondary-button dropdown">
       <p>{{ selectedLabel }}</p>
       <Arrow
         class="arrow"
@@ -143,7 +143,7 @@ watch(
   flex-shrink: 0;
 }
 
-.dropdown-item > input[type="radio"]:checked ~ .check {
+.dropdown-item > input:checked ~ .check {
   display: block;
 }
 
@@ -158,7 +158,7 @@ watch(
   min-width: 0;
 }
 
-.dropdown-item:has(input[type="radio"]:hover) {
+.dropdown-item:has(input:hover) {
   border-top: 2px solid #69696b;
   border-left: 2px solid #69696b;
   border-bottom: 2px solid #3e3e3f;
@@ -166,7 +166,7 @@ watch(
   background-color: #58585a;
 }
 
-.dropdown-item > input[type="radio"] {
+.dropdown-item > input {
   appearance: none;
   inset: 0;
   margin: 0;
@@ -178,35 +178,15 @@ watch(
 /* DROPDOWN BUTTON */
 
 .dropdown {
-  appearance: none;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  padding: 8px 20px;
-  background-color: #d0d1d4;
-  color: #1e1e1f;
-  border: 2px solid #e1e1e4;
   width: 100%;
-  box-shadow:
-    0px 4px 0px #58585a,
-    0 0 0 2px #1e1e1f,
-    0 4px 0 2px #1e1e1f;
-}
-
-.dropdown:hover {
-  background-color: #b1b2b5;
-  border-color: #f4f6f9;
-}
-
-.dropdown:active {
-  background-color: #b1b2b5;
-  border-color: #dcdcdc;
-  box-shadow: 0 0 0 2px #1e1e1f;
-  transform: translateY(4px);
 }
 
 .dropdown > p {
   font-family: "MinecraftSeven";
+  color: #1e1e1f;
   margin: 2px 10px 0 0;
   font-size: 1rem;
 }
